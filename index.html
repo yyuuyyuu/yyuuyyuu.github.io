@@ -1,0 +1,141 @@
+<html>
+<head>
+<title>Attributes Probability Calculator</title>
+<script type="text/javascript">
+  window.onload = function() {
+    const firstDate = +new Date('2023-01-23T03:00:00.000+05:00')
+    const firstWorldGodLv = 476
+    const dateDiff = parseInt((new Date() - firstDate) / (24 * 60 * 60 * 1000))
+
+    document.getElementById("worldGodLv").value = firstWorldGodLv + (dateDiff * 2)
+    for(const e of document.querySelectorAll('.calc')) {
+      e.addEventListener('change', calc)
+    }
+    fetch('legs-data.json').then(r => r.json()).then(data => {
+      window._data = data
+      calc()
+    })
+  }
+  function calc() {
+    const [limits, probabilities] = window._data
+    let _godLv = parseInt(document.getElementById("godLv").value);
+    const dropType = parseInt(document.getElementById("dropType").value);
+    const worldGodLv = parseInt(document.getElementById("worldGodLv").value);
+    const hell = parseInt(document.getElementById("hell").value);
+    const plusMinus = parseInt(document.getElementById("plusMinus").value);
+    const totals = limits
+      .filter(l => l[0] === dropType && l[1] === hell && (_godLv - plusMinus) <= l[2] && l[2] <= (_godLv + plusMinus))
+      .reduce((o, l) => ({ 
+        min: Math.min(o.min, ...l[3]), 
+        max: Math.max(o.max, ...l[4]), 
+      }), { min: 9999, max: 0 })
+
+    let result = document.getElementById('result')
+    result.innerHTML = `<div class='flex flex-col w-full'></div>`
+    result = result.firstChild
+    let j = 0
+    for(let godLv = _godLv - plusMinus - 1; godLv <= _godLv + plusMinus; godLv++) {
+      const offset = godLv - worldGodLv
+      const [d, h, g, lower, upper, nums] = limits.find(l => l[0] === dropType && l[1] === hell && l[2] === godLv)
+      const min = Math.min(...lower)
+      const max = Math.max(...upper)
+      const ranges = []
+      let probs
+      for(let p of probabilities) {
+        if(p[0] >= offset) {
+          probs = p[dropType === 6 ? 1 : 2]
+          break
+        }
+      }
+      
+      const total = max - min
+      
+      for(let i = 0; i <= 4; i++) {
+        const range = {min: lower[i], max: upper[i], prob: probs[i]}
+        const dupeIndex = ranges.findIndex(r => r.min == lower[i] && r.max == upper[i])
+        if(dupeIndex !== -1) {
+          const dupe = ranges[dupeIndex]
+          dupe.prob += probs[i]
+          continue
+        }
+        ranges.push(range)
+      }
+      let i = 0
+      const fullWidth = 100 * total / (totals.max - totals.min)
+      const o = Math.abs(_godLv - godLv)
+      const color = dropType === 6 ? 'orange' : 'green'
+      const opacity = o === 0 ? '100' : o <= 1 ? '90' : o <= 3 ? '80' : o <= 5 ? '70' : '60'
+      result.innerHTML += `<div class='flex ${_godLv == godLv ? "font-bold" : ""} opacity-${opacity}'>
+        <div class='text-xs w-8 -ml-8'>${j !== 0 ? godLv : ''}</div>
+        <div class='flex flex-1 gap-1' style='width: ${fullWidth}%;'></div>
+      </div`
+      for(let range of ranges) {
+        const width = range.max - range.min
+        const ratio = (width / total) * 100
+        const labelmin = `<div class='text-[8px] my-auto'>${Math.ceil(range.min)}</div>`
+        const prob = `<div class='my-auto text-xs'>${(range.prob * 100).toFixed(1)}%</div>`
+        let labelmax = `<div class='text-[8px] my-auto'>${Math.ceil(range.max)}</div>`
+        if(j === 0) {
+          result.lastElementChild.lastElementChild.innerHTML += `<div class='w-full flex justify-center bg-${color}-100' style='width: ${ratio}%; height:20px; min-width:70px;'>
+            ${i < 2 ? '2 attr' : '3 attr'}
+          </div>`
+        }  else {
+          result.lastElementChild.lastElementChild.innerHTML += `<div class='w-full flex justify-between bg-${color}-${(4 - i) * 100}' style='width: ${ratio}%; height:20px; min-width:70px;'>
+            ${labelmin}
+            ${prob}
+            ${labelmax}
+            </div>`
+        }
+        //legend.innerHTML += `<div style='position:absolute; left: ${100*(range.min - min)/(max-min)}%;'>${range.min}</div>`
+        i++
+      }
+      j++
+    }
+  }
+</script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * {
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body class='p-2'>
+  <h1>Combined Attributes Probability Calculator</h1>
+  <div class='flex gap-2 align-end'>
+    <div>
+      <label for="dropType" class="block text-sm font-medium text-gray-700">Sets / Legs</label>
+      <select class='calc border border-slate-300 rounded-md p-1 shadow-sm' id="dropType">
+        <option value=6>Legendaries</option>
+        <option value=7>Sets</option>
+      </select>
+    </div>
+    <div>
+      <label for="Hell" class="block text-sm font-medium text-gray-700">Hell</label>
+      <select class='calc border border-slate-300 rounded-md p-1 shadow-sm' id="hell" value=7>
+        <option value=1>Hell 1</option>
+        <option value=2>Hell 2</option>
+        <option value=3>Hell 3</option>
+        <option value=4>Hell 4</option>
+        <option value=5>Hell 5</option>
+        <option value=6>Hell 6</option>
+        <option value=7 selected>Hell 7</option>
+        <option value=8>Hell 8</option>
+      </select>      
+    </div>    
+    <div>
+      <label for="godLv" class="block text-sm font-medium text-gray-700">Paragon Level</label>
+      <input class='calc border border-slate-300 rounded-md p-1 shadow-sm' type="number" id="godLv" placeholder="paragon level" value=480>
+    </div>
+    <div>
+      <label for="worldGodLv" class="block text-sm font-medium text-gray-700">Server Level</label>
+      <input class='calc border border-slate-300 rounded-md p-1 shadow-sm' type="number" id="worldGodLv" placeholder="server level" value=480>
+    </div>
+    <div>
+      <label for="plusMinus" class="block text-sm font-medium text-gray-700">+/-</label>
+      <input class='calc border border-slate-300 rounded-md p-1 shadow-sm' type="number" id="plusMinus" value=10>
+    </div>
+  </div>
+  <div id='result' class='flex w-full p-8'></div>
+</body> 
+</html>
