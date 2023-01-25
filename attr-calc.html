@@ -75,7 +75,7 @@
       const color = (dropType === 6 ? 'orange' : 'green')
       let pt = 400
       const isMain = _godLv == godLv
-      result.innerHTML += `<div class='flex text-center justify-between ${isMain ? "font-bold " + "bg-" + color + "-" + pt : ""}'>
+      result.innerHTML += `<div class='flex text-center justify-between ${isMain ? "bg-" + color + "-" + pt : ""}'>
         <div class='w-12 text-black text-${j===0 ? 'center' : 'left'}'>${j !== 0 ? godLv : 'lvl'}</div>
         
       </div`
@@ -86,9 +86,9 @@
         const ratio = (width / total) * 100
         const numColor = isMain ? '' : j === 0 ? `bg-${color}-100` : `bg-${color}-500`
         const shit = nums[i] === 3 ? '🪓' : '💩'
-        const labelmin = i === 0  ? `<div class='my-auto w-10  ${numColor} text-gray-900'>${j !== 0 ? Math.ceil(range.min) : shit}</div>` : ''
+        const labelmin = i === 0  ? `<div class='my-auto w-10  ${numColor} text-gray-900 font-bold'>${j !== 0 ? Math.ceil(range.min) : shit}</div>` : ''
         const prob = `<div class='my-auto font-bold ${bgColor}' style='width: ${ratio}%; min-width:90px;'>${(range.prob * 100).toFixed(1)}%</div>`
-        let labelmax = `<div class='w-10 my-auto ${numColor} text-gray-900'>${j === 0 ? shit : Math.ceil(range.max)}</div>`
+        let labelmax = `<div class='w-10 my-auto ${numColor} text-gray-900 ${i === len - 1 ? "font-bold" : ""}'>${j === 0 ? shit : Math.ceil(range.max)}</div>`
         if(j === 0) {
           const header = `<div class='bg-${color}-100 my-auto text-center' style='width: ${ratio}%; min-width:90px;'>${nums[i]}/3 attr</div>`
           result.lastElementChild.innerHTML += labelmin + header + labelmax
