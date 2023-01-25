@@ -10,6 +10,7 @@
     document.getElementById("worldGodLv").value = firstWorldGodLv + (dateDiff * 2)
     for(const e of document.querySelectorAll('.calc')) {
       e.addEventListener('change', calc)
+      e.addEventListener('keyup', calc)
     }
     fetch('legs-data.json').then(r => r.json()).then(data => {
       window._data = data
@@ -23,6 +24,7 @@
     const worldGodLv = parseInt(document.getElementById("worldGodLv").value);
     const hell = parseInt(document.getElementById("hell").value);
     const plusMinus = parseInt(document.getElementById("plusMinus").value);
+    const step = parseInt(document.getElementById("step").value);
     const totals = limits
       .filter(l => l[0] === dropType && l[1] === hell && (_godLv - plusMinus) <= l[2] && l[2] <= (_godLv + plusMinus))
       .reduce((o, l) => ({ 
@@ -34,8 +36,14 @@
     result.innerHTML = `<div class='flex flex-col w-full'></div>`
     result = result.firstChild
     let j = 0
-    for(let godLv = _godLv - plusMinus - 1; godLv <= _godLv + plusMinus; godLv++) {
+
+    let offsetMin = _godLv - plusMinus * step
+    let offsetMax = _godLv + plusMinus * step
+    if(offsetMin < 1) offsetMin = 1
+    if(offsetMax > 899) offsetMax = 899
+    for(let godLv = offsetMin; godLv <= offsetMax; godLv += step) {
       const offset = godLv - worldGodLv
+      console.log(godLv)
       const [d, h, g, lower, upper, nums] = limits.find(l => l[0] === dropType && l[1] === hell && l[2] === godLv)
       const min = Math.min(...lower)
       const max = Math.max(...upper)
@@ -63,30 +71,29 @@
       let i = 0
       const fullWidth = 100 * total / (totals.max - totals.min)
       const o = Math.abs(_godLv - godLv)
-      const color = dropType === 6 ? 'orange' : 'green'
-      const opacity = o === 0 ? '100' : o <= 1 ? '90' : o <= 3 ? '80' : o <= 5 ? '70' : '60'
-      result.innerHTML += `<div class='flex ${_godLv == godLv ? "font-bold" : ""} opacity-${opacity}'>
-        <div class='text-xs w-8 -ml-8'>${j !== 0 ? godLv : ''}</div>
-        <div class='flex flex-1 gap-1' style='width: ${fullWidth}%;'></div>
+      const color = (dropType === 6 ? 'orange' : 'green')
+      let pt = 400
+      const isMain = _godLv == godLv
+      result.innerHTML += `<div class='flex text-center justify-between ${isMain ? "font-bold " + "bg-" + color + "-" + pt : ""}'>
+        <div class='w-12 text-black text-${j===0 ? 'center' : 'left'}'>${j !== 0 ? godLv : 'lvl'}</div>
+        
       </div`
+      const len = ranges.length
       for(let range of ranges) {
         const width = range.max - range.min
+        const bgColor = `bg-${color}-${pt}/${70 - i * 20}`
         const ratio = (width / total) * 100
-        const labelmin = `<div class='text-[8px] my-auto'>${Math.ceil(range.min)}</div>`
-        const prob = `<div class='my-auto text-xs'>${(range.prob * 100).toFixed(1)}%</div>`
-        let labelmax = `<div class='text-[8px] my-auto'>${Math.ceil(range.max)}</div>`
+        const numColor = isMain ? '' : `bg-${color}-500`
+        const labelmin = i === 0  ? `<div class='my-auto w-10  ${numColor} text-gray-900'>${j !== 0 ? Math.ceil(range.min) : ''}</div>` : ''
+        const prob = `<div class='my-auto font-bold ${bgColor}' style='width: ${ratio}%; min-width:90px;'>${(range.prob * 100).toFixed(1)}%</div>`
+        let labelmax = `<div class='w-10 my-auto ${numColor} text-gray-900'>${j === 0 ? '' : Math.ceil(range.max)}</div>`
         if(j === 0) {
-          result.lastElementChild.lastElementChild.innerHTML += `<div class='w-full flex justify-center bg-${color}-100' style='width: ${ratio}%; height:20px; min-width:70px;'>
-            ${i < 2 ? '2 attr' : '3 attr'}
-          </div>`
-        }  else {
-          result.lastElementChild.lastElementChild.innerHTML += `<div class='w-full flex justify-between bg-${color}-${(4 - i) * 100}' style='width: ${ratio}%; height:20px; min-width:70px;'>
-            ${labelmin}
-            ${prob}
-            ${labelmax}
-            </div>`
+          const shit = nums[i] === 3 ? '🪓' : '💩'
+          const header = `<div class='bg-${color}-100 my-auto text-center' style='width: ${ratio}%; min-width:90px;'>${shit}${nums[i]}/3 attr${shit}</div>`
+          result.lastElementChild.innerHTML += labelmin + header + labelmax
+        } else { 
+          result.lastElementChild.innerHTML += labelmin + prob + labelmax
         }
-        //legend.innerHTML += `<div style='position:absolute; left: ${100*(range.min - min)/(max-min)}%;'>${range.min}</div>`
         i++
       }
       j++
@@ -100,9 +107,9 @@
   }
 </style>
 </head>
-<body class='p-2'>
-  <h1>Combined Attributes Probability Calculator</h1>
-  <div class='flex gap-2 align-end'>
+<body class='py-2'>
+  <h1 class='text-center text-xl'>Combined Attributes Probability Calculator</h1>
+  <div class='flex gap-2 align-end sticky top-0 bg-white'>
     <div>
       <label for="dropType" class="block text-sm font-medium text-gray-700">Sets / Legs</label>
       <select class='calc border border-slate-300 rounded-md p-1 shadow-sm' id="dropType">
@@ -135,7 +142,11 @@
       <label for="plusMinus" class="block text-sm font-medium text-gray-700">+/-</label>
       <input class='calc border border-slate-300 rounded-md p-1 shadow-sm' type="number" id="plusMinus" value=10>
     </div>
+    <div>
+      <label for="step" class="block text-sm font-medium text-gray-700">step</label>
+      <input class='calc border border-slate-300 rounded-md p-1 shadow-sm' type="number" id="step" value=5>
+    </div>
   </div>
-  <div id='result' class='flex w-full p-8'></div>
+  <div id='result' class='flex w-full p-4'></div>
 </body> 
 </html>
