@@ -9,6 +9,7 @@
     const dateDiff = parseInt((new Date() - firstDate) / (24 * 60 * 60 * 1000))
 
     document.getElementById("worldGodLv").value = firstWorldGodLv + (dateDiff * 2)
+    document.getElementById("godLv").value = firstWorldGodLv + (dateDiff * 2)
     for(const e of document.querySelectorAll('.calc')) {
       e.addEventListener('change', calc)
       e.addEventListener('keyup', calc)
